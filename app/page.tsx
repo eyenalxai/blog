@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+
 import { getPostList } from '@/lib/post'
 import { Posts } from '@/components/posts'
 import { Metadata } from 'next'

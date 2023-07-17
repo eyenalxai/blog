@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+
 import { Post } from '@/components/post'
 import { getPost, getPostMeta, getPostSlugs } from '@/lib/post'
 import { PageParams } from '@/lib/types'
