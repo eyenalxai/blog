@@ -8,6 +8,9 @@ import remarkGfm from 'remark-gfm'
 import remarkRehype from 'remark-rehype'
 import rehypeStringify from 'rehype-stringify'
 import { PageParams, PostMeta } from '@/lib/types'
+import path from 'node:path'
+
+const POSTS_FOLDER = path.resolve(process.cwd(), '_posts')
 
 const parseContent = async (slug: string) => {
   const content = await getPostContent(slug)
@@ -15,12 +18,12 @@ const parseContent = async (slug: string) => {
 }
 
 export const getPostSlugs = async () => {
-  const files = await fs.promises.readdir('_posts')
+  const files = await fs.promises.readdir(POSTS_FOLDER)
   return files.map(fileName => fileName.replace('.md', ''))
 }
 
 export const getPostContent = (slug: string) =>
-  fs.promises.readFile(`_posts/${slug}.md`, 'utf-8').catch(() => null)
+  fs.promises.readFile(`${POSTS_FOLDER}/${slug}.md`, 'utf-8').catch(() => null)
 
 export const getPostMeta = async (slug: string) => {
   const parsed = await parseContent(slug)
