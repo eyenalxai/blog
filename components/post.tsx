@@ -8,7 +8,7 @@ type PostProps = {
 
 export const Post = ({ html, meta }: PostProps) => {
   return (
-    <div className={cn(['prose', 'dark:prose-invert'], ['mt-8', 'mb-24'])}>
+    <div className={cn(['prose', 'dark:prose-invert'], 'mt-4', 'mb-24')}>
       <div dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   )
