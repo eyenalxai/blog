@@ -206,7 +206,7 @@ JWT_SECRET=f54df07e62beb742fe5e0453c2a56a00f787607a28c18b5cb073086a37206d07
 GOOSE_DRIVER=postgres
 GOOSE_DBSTRING=postgresql://postgres:mysecretpassword@localhost:5432/postgres?sslmode=disable
 ```
-Don't touch it ever again anymore.
+Don't touch it ever again.
 
 We need a thing to handle JWTs for us, we'll use a thing called [jwt](https://github.com/golang-jwt/jwt):
 ```bash
