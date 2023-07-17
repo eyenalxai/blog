@@ -618,9 +618,7 @@ curl -c cookies.txt -X POST -H "Content-Type: application/json" -d '{"username":
 ```json
 {"status":"login successful"}
 ```
-How did that took three tries?
-
-Also, there was no need to save the cookies to a file during reginstration.
+There was no need to save the cookies to a file during registration all along!
 
 Anyway, let's add some protected routes. Actually, let's add a middleware first.
 
