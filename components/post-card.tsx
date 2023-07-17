@@ -19,9 +19,7 @@ export const PostCard = ({ post }: PostCardProps) => {
     <Link href={`/${post.slug}`}>
       <Card key={post.slug}>
         <CardHeader>
-          <CardTitle>
-            {post.title} {post.title}
-          </CardTitle>
+          <CardTitle>{post.title}</CardTitle>
           <CardDescription>{post.excerpt}</CardDescription>
         </CardHeader>
         <CardFooter>
