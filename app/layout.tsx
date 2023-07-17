@@ -1,8 +1,9 @@
 import './globals.css'
-import {fontMono, fontSans} from '@/lib/fonts'
-import {cn} from '@/lib/utils'
-import {ReactNode} from 'react'
-import {Providers} from '@/components/providers'
+import { fontMono, fontSans } from '@/lib/fonts'
+import { cn } from '@/lib/utils'
+import { ReactNode } from 'react'
+import { Providers } from '@/components/providers'
+import { Header } from '@/components/header'
 
 export const metadata = {
   title: 'Create Next App',
@@ -24,7 +25,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         )}
       >
         <Providers attribute="class" defaultTheme="system" enableSystem>
-          {children}
+          <Header />
+          <main className={cn('container', 'mx-auto', 'max-w-2xl')}>
+            {children}
+          </main>
         </Providers>
       </body>
     </html>
