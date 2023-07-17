@@ -81,7 +81,7 @@ Run:
 env $(cat .env.local | xargs) goose -dir .migrations up
 ```
 
-Observe output:
+Observe the output:
 ```bash
 2023/07/17 23:32:24 OK   20230717232616_initial.sql (7.25ms)
 2023/07/17 23:32:24 goose: no migrations to run. current version: 20230717232616
@@ -132,7 +132,7 @@ Just some code:
 sqlc generate
 ```
 
-Observe stuff generated in `postgresql` directory.
+Observe the stuff generated in `postgresql` directory.
 
 Might as well install [uuid](https://github.com/google/uuid) package now:
 ```bash
