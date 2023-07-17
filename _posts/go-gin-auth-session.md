@@ -1,5 +1,5 @@
 ---
-title: 'Basic session authentication with JWTs using Go and PostgreSQL'
+title: 'Basic session authentication in Go using Gin, PostgreSQL and JWTs'
 excerpt: 'You will be forced to set up and manage your database migrations, write SQL queries, copy and paste Go code, use curl, hash passwords and set cookies with JWTs inside them.'
 date: '2023-07-17'
 author: Datxy Vellog
