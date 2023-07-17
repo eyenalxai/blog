@@ -22,13 +22,12 @@ We will be using [goose](https://github.com/pressly/goose) to manage our migrati
 go install github.com/pressly/goose/v3/cmd/goose@latest
 ```
 
-Create a directory for your migrations
-
+Create a directory for your migrations:
 ```bash
 mkdir .migrations
 ```
 
-Initiate phase 1
+Initiate phase 1:
 ```bash
 goose -dir .migrations create initial sql
 ```
