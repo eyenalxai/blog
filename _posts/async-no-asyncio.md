@@ -72,7 +72,7 @@ def scheduler() -> Scheduler:
 ```
 
 It works like this:
-1. It has a queue of generators using `deque` from the standard library. Deque is a double-ended queue, which means we can append to the right and pop from the left.
+1. It has a queue of generators using `deque` from the standard library. Deque is a double-ended queue, which means we can append to the right and pop pop pop from the left.
 2. Closure `add_task` receives a generator and appends it to the queue.
 3. Closure `run` that, well, runs the first generator in the queue until it yields. If the generator is exhausted, it is removed from the queue. If the generator is not exhausted, it is moved to the end of the queue. That way we can run all generators in the queue, one by one.
 
