@@ -1,13 +1,11 @@
 ---
 title: 'Basic session authentication in Go using Gin, PostgreSQL and JWTs'
-excerpt: 'You will be forced to set up and manage your database migrations, write SQL queries, copy and paste Go code, use curl, hash passwords and set cookies with JWTs inside them.'
+excerpt: 'Go, SQL, database migrations, JWTs, password hashing, cookies, curl, etc.'
 date: '2023-07-17'
 author: Datxy Vellog
 ---
 
 # Basic session authentication in Go using Gin, PostgreSQL and JWTs 
-
-You will be forced to set up and manage your database migrations, write SQL queries, copy and paste Go code, use curl, hash passwords and set cookies with JWTs inside them.
 
 I expect you to have Go is installed and that you can run programs from your terminal you installed using `go install`. 
 You should also know how to set up PostgreSQL or at least have Docker working.
