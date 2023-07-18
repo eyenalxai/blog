@@ -399,7 +399,7 @@ Listening on port 8000
 
 Well that was underwhelming. We need to make some requests to see it in action.
 
-For that I allow for us to install some dependencies like `aiohttp`,  because we are cowards.
+For that I allow for us to install some dependencies, `aiohttp` for example,  because we are cowards.
 
 Here is a simple script that makes 10 requests to the server, with a sleep duration of 10 to 1 second. Did you know that in `lua`, arrays start at 1? I didn't either before I typed this.
 
