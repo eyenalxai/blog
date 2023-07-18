@@ -1,7 +1,7 @@
 ---
-title: 'Basic session authentication in Go using Gin, PostgreSQL and JWTs'
-excerpt: 'Go, SQL, database migrations, JWTs, password hashing, cookies, curl, etc.'
-date: '2023-07-17'
+title: Basic session authentication in Go using Gin, PostgreSQL and JWTs
+excerpt: Go, SQL, database migrations, JWTs, password hashing, cookies, curl, etc.
+date: 2023-07-17
 author: Datxy Vellog
 ---
 
