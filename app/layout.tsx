@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       >
         <Providers attribute="class" defaultTheme="system" enableSystem>
           <Header />
-          <main className={cn('container', 'mx-auto', 'max-w-2xl')}>
+          <main className={cn('container', 'mx-auto', 'max-w-3xl')}>
             {children}
           </main>
           <Analytics />
