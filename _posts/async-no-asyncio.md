@@ -160,7 +160,7 @@ Task sleeping for 3 seconds finished
 Task sleeping for 4 seconds finished
 ```
 
-Now we obviously want callbacks for myself and my friends. Implementation goes something like this:
+Now we obviously want callbacks. Who doesn't? Implementation goes something like this:
 ```python
 Callback: TypeAlias = Callable[[], Any]
 AddTask: TypeAlias = Callable[[Generator[Any, Any, Any], Callback | None], None]
@@ -223,7 +223,7 @@ This already gives us a lot of possibilities. Time to handle HTTP requests!
 
 And it'll be a doozy.
 
-We could've used some existing library for HTTP, or at least sockets, so we could've had at least a way to flush nicely, but might as well reinvent and this while we're at it.
+We could've used some existing library for HTTP, or at least sockets, so we could've had at least a way to flush nicely, but might as well reinvent and all this while we're at it.
 
 Our `main`:
 ```python
@@ -245,7 +245,7 @@ def main() -> None:
 ```
 
 1. We create a socket, it doesn't matter what kind and how.
-2. We set some options on the socket. I don't know what they do, but they're there. One of them looks like it's for reusing the address, so we can restart the server without waiting for the socket to be freed.
+2. We set some options on the socket. I don't know what they do, but they're there. One of them looks like it's for reusing the address, so we can restart the server without waiting for the port to be freed.
 3. We bind the socket to the port.
 4. We start listening for connections, with a backlog of 4096 connections. That's like, A LOT! 
 
@@ -287,7 +287,7 @@ You may ask, call what on them?
 
 HANDLE SOCKET!
 
-Ask for one function, get two extra for free!
+Ask for one function, get extra two for free!
 
 ```python
 def handle_existing_connection(
