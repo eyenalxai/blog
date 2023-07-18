@@ -482,3 +482,44 @@ I slept for 10 seconds
 ```
 
 It's basically as good as FastAPI at this point and without any of the dependencies. 
+
+Bonus round:
+
+```python
+def main() -> None:
+    add_task, run = scheduler()
+
+    add_task(
+        async_sleep(seconds=1),
+        lambda: add_task(
+            async_sleep(seconds=1),
+            lambda: add_task(
+                async_sleep(seconds=1),
+                lambda: add_task(
+                    async_sleep(seconds=1),
+                    lambda: add_task(
+                        async_sleep(seconds=1),
+                        lambda: add_task(
+                            async_sleep(seconds=1),
+                            lambda: add_task(
+                                async_sleep(seconds=1),
+                                lambda: add_task(
+                                    async_sleep(seconds=1),
+                                    lambda: add_task(
+                                        async_sleep(seconds=1),
+                                        None,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+
+    run()
+
+```
+
+Callback hell implemented! That was my goal all along!
