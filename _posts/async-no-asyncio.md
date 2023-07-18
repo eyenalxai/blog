@@ -342,7 +342,7 @@ def handle_socket(
 2. We receive the request from the socket.
 3. If the request is not empty and contains the string "GET", which inspired the name of the GET request, we parse the URI and extract the sleep duration from it. If the URI is not valid, we default to 1 second.
 4. We print that we received a GET request, I like printing.
-5. We add a task to the scheduler, code for him will be next, and pass it a callback that will shutdown the socket for writing when the task is finished.
+5. We add a task to the scheduler, code for the task will be next, and pass it a callback that will shutdown the socket for writing when the task is finished.
 
 `handle_new_connection`:
 1. We accept the connection.
