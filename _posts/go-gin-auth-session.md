@@ -7,6 +7,8 @@ author: Datxy Vellog
 
 # Basic session authentication in Go using Gin, PostgreSQL and JWTs 
 
+[Full Code on GitHub](https://github.com/eyenalxai/go-simple-auth)
+
 I expect you to have Go is installed and that you can run programs from your terminal you installed using `go install`. 
 You should also know how to set up PostgreSQL or at least have Docker working.
 
