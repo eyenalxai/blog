@@ -74,7 +74,8 @@ def scheduler() -> Scheduler:
 It works like this:
 1. It has a queue of generators using `deque` from the standard library. Deque is a double-ended queue, which means we can append to the right and pop pop pop from the left.
 2. Closure `add_task` receives a generator and appends it to the queue.
-3. Closure `run` that, well, runs the first generator in the queue until it yields. If the generator is exhausted, it is removed from the queue. If the generator is not exhausted, it is moved to the end of the queue. That way we can run all generators in the queue, one by one.
+3. Closure `run` that, well, runs the first generator in the queue until it yields. If the generator is exhausted, it is removed from the queue. If the generator is not exhausted, queue is rotated to the left, rotated to the left means that each element is shifted one position to the left. The first element moves to the end of the deque, and all other elements move to the position of their immediate predecessor.
+4. That way we can run all generators in the queue, one by one.
 
 Let's update our counting functions to be generators:
 ```python
@@ -90,7 +91,7 @@ def count_down(*, n: int) -> Generator[None, None, None]:
         yield
 ```
 
-I present to you our new `main` function:
+Our new `main` function:
 ```python
 def main() -> None:
     add_task, run = scheduler()
@@ -119,7 +120,7 @@ count_dn: 0
 
 That's a start, and it even prints last zero! See, everything is better when done asynchronously.
 
-But even a toddler could've counted to 5 and back by now. I want HTTP requests!
+Even a toddler could've counted to 5 and back by now. I want HTTP requests!
 
 But first I want some kind of `asyncio.sleep()` function. Let's make one:
 ```python
@@ -138,7 +139,7 @@ def async_sleep(*, seconds: int) -> Generator[None, None, None]:
 Basically, it's a generator that yields until a certain amount of time has passed. Each time it yields, the scheduler will run another task, and another task in our case is another call to `async_sleep`.
 It's not very accurate, but as the saying goes, *simplicity means zero accuracy*.
 
-Our updated `main` function:
+Updated `main` function:
 ```python
 def main() -> None:
     add_task, run = scheduler()
@@ -281,10 +282,10 @@ def http_get_listener(
         yield
 ```
 
-1. We create a dictionary of connections. The keys are the addresses of the clients, and the values are the sockets.
-2. We enter an infinite loop, but I want it to break when fundamental math axioms are broken.
-3. We use `select.select` to wait for a socket to be ready to read. We pass the server socket and all the client sockets to it, and it will return a list of sockets that are ready to read. We also pass a timeout of 0.1 seconds, so we don't block the main thread for too long. Could've been lower.
-4. We iterate over the sockets that are ready to read, and call `handle_socket` on them.
+1. A dictionary of connections is, where client addresses serve as keys and sockets as values.
+2. The implementation initializes an infinite loop, designed to break in the event of a violation of fundamental math axioms.
+3. The `select.select` function waits for a socket to be ready to read. The server socket and all client sockets are provided as input, returning a list of sockets ready to read. We don't want to block the main thread, so we set a timeout of 0.1 seconds, could've been lower.
+4. A loop is executed over the sockets ready to read, applying `handle_socket` on each.
 
 You may ask, call what on them?
 
