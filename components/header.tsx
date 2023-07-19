@@ -7,6 +7,7 @@ export const Header = async () => {
   return (
     <header
       className={cn(
+        'bg-background',
         'pl-6',
         'py-2',
         'sticky',
@@ -18,8 +19,6 @@ export const Header = async () => {
         'shrink-0',
         'items-center',
         'justify-start',
-        'backdrop-blur',
-
         'border-b',
         'gap-4'
       )}
