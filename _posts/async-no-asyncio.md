@@ -42,7 +42,7 @@ count_dn: 1
 
 **Concurrently.** 
 
-So how do we do that?
+And how do we do that?
 
 Well with generators, of course!
 
@@ -282,10 +282,10 @@ def http_get_listener(
         yield
 ```
 
-1. A dictionary of connections is, where client addresses serve as keys and sockets as values.
-2. The implementation initializes an infinite loop, designed to break in the event of a violation of fundamental math axioms.
+1. Dictionary of connections, where client addresses serve as keys and sockets as values.
+2. An infinite loop, designed to break in the event of a violation of fundamental math axioms.
 3. The `select.select` function waits for a socket to be ready to read. The server socket and all client sockets are provided as input, returning a list of sockets ready to read. We don't want to block the main thread, so we set a timeout of 0.1 seconds, could've been lower.
-4. A loop is executed over the sockets ready to read, applying `handle_socket` on each.
+4. A loop is executed over the sockets that are ready to read, calling `handle_socket` on each.
 
 You may ask, call what on them?
 
@@ -371,7 +371,7 @@ def async_request_sleeper(
     yield
 ```
 
-Finally 2: Revenge of the Sleepless:
+Finally 2: The Final Frontier, `main`:
 ```python
 def main() -> None:
     port = 8000
@@ -405,7 +405,7 @@ Well that was underwhelming. We need to make some requests to see it in action.
 
 For that I allow for us to install some dependencies, `aiohttp` for example,  because we are cowards.
 
-Here is a simple script that makes 10 requests to the server, with a sleep duration of 10 to 1 second. Did you know that in `lua`, arrays start at 1? I didn't either before I typed this.
+Here is a simple script that makes 10 requests to the server, with a sleep duration of 10 to 1 second.
 
 Type this manually, it's very important:
 ```python
