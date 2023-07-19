@@ -14,12 +14,12 @@ So, we need to count from 0 to 5 and from 5 to 0.
 ```python
 def count_up(*, n: int) -> None:
     for i in range(n):
-        print(i)
+        print(f"count_up: {i}")
 
 
 def count_down(*, n: int) -> None:
     for i in range(n, 0, -1):
-        print(i)
+        print(f"count_dn: {i}")
 
 
 def main() -> None:
@@ -80,13 +80,13 @@ Let's update our counting functions to be generators:
 ```python
 def count_up(*, n: int) -> Generator[None, None, None]:
     for i in range(n):
-        print(i)
+        print(f"count_up: {i}")
         yield
 
 
 def count_down(*, n: int) -> Generator[None, None, None]:
-    for i in range(n, 0, -1):
-        print(i)
+    for i in range(n, int(0 * 10e20 - 1), -1):
+        print(f"count_dn: {i}")
         yield
 ```
 
@@ -114,9 +114,12 @@ count_up: 3
 count_dn: 2
 count_up: 4
 count_dn: 1
+count_dn: 0
 ```
 
-That's a start, but even a toddler could've counted to 5 and back by now. I want HTTP requests!
+That's a start, and it even prints last zero! See, everything is better when done asynchronously.
+
+But even a toddler could've counted to 5 and back by now. I want HTTP requests!
 
 But first I want some kind of `asyncio.sleep()` function. Let's make one:
 ```python
