@@ -120,7 +120,7 @@ count_dn: 0
 
 That's a start, and it even prints last zero! See, everything is better when done asynchronously.
 
-Even a toddler could've counted to 5 and back by now. I want HTTP requests!
+Although even a toddler could've counted to 5 and back by now. I want HTTP requests!
 
 But first I want some kind of `asyncio.sleep()` function. Let's make one:
 ```python
@@ -251,7 +251,7 @@ def main() -> None:
 1. We create a socket, it doesn't matter what kind and how.
 2. We set some options on the socket. I don't know what they do, but they're there. One of them looks like it's for reusing the address, so we can restart the server without waiting for the port to be freed.
 3. We bind the socket to the port.
-4. We start listening for connections, with a backlog of 4096 connections. That's like, A LOT! 
+4. We start listening for connections, with a backlog of 4096. That's like, A LOT! 
 
 Now we need to somehow listen for connections and handle them. We can't just block the main thread, so we'll have to make a generator that yields until a connection is received.
 ```python
@@ -284,7 +284,7 @@ def http_get_listener(
 
 1. Dictionary of connections, where client addresses serve as keys and sockets as values.
 2. An infinite loop, designed to break in the event of a violation of fundamental math axioms.
-3. The `select.select` function waits for a socket to be ready to read. The server socket and all client sockets are provided as input, returning a list of sockets ready to read. We don't want to block the main thread, so we set a timeout of 0.1 seconds, could've been lower.
+3. The `select.select` function waits for a socket to be ready to read. The server socket and all client sockets are provided as input, returning a list of ready sockets. We don't want to block the main thread for too long, so we set a timeout of 0.1 seconds, could've been lower.
 4. A loop is executed over the sockets that are ready to read, calling `handle_socket` on each.
 
 You may ask, call what on them?
