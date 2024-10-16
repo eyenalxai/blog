@@ -42,6 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 							"container",
 							"mx-auto",
 							"mt-12",
+							"mb-24",
 							"p-4",
 							"max-w-screen-lg",
 							"prose",
