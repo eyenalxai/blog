@@ -1,28 +1,36 @@
-# SST + Nomad + Traefik on a $5 VPS
+# SST + Nomad
 
-Simple single-node setup with Nomad, Docker, Traefik, and SST to enable easy remote stuff deployment with rolling updates
+## $5 VPS
 
-## VPS and DNS
-We're using a VPS running Ubuntu, and our final setup consumes approximately 1GB of RAM.
-For DNS, I chose Cloudflare because it integrates well with Traefik.
-You can use a different DNS provider, but you'll need to adjust the setup accordingly.
-Read more [here](https://doc.traefik.io/traefik/https/acme),
+Get yourself a VPS with at least 1GB of RAM, preferably a bit more. I know it is possible to provision one with SST from a myriad of providers,
+but I wanted a more general setup that could be used with any VPS provider or maybe even a bare metal server.
+
+## DNS
+For DNS I'll be using Cloudflare because it integrates neatly with Traefik, which will be our reverse proxy, load balancer, and TLS certificate provisioner.
+You can use any other DNS provider, but you'll have to adjust the Traefik configuration accordingly.
+You can read more [here](https://doc.traefik.io/traefik/https/acme),
 [here](https://doc.traefik.io/traefik/user-guides/docker-compose/acme-dns),
 and [here](https://doc.traefik.io/traefik/https/acme/#providers).
 
-From now on pretend that `10.11.12.13` is your server's public IP and `example.com` is your domain.
-
-Create A records for your domain, pointing to your server's IP address:
+Pretend that `10.11.12.13` is your server's public IP and `example.com` is your domain, then create A records for your domain, pointing to your server's public IP address:
 
 - `A example.com 10.11.12.13`
 - `A nomad.example.com 10.11.12.13`
+- `A database.example.com 10.11.12.13`
 
-## Installing stuff
+Get a `CF_ZONE_API_TOKEN` for Traefik to use Cloudflare's API for DNS challenge to issue TLS certificates, specify the zone `example.com`. You can do that [here](https://dash.cloudflare.com/profile/api-token). Save the token.
+
+
+## Installing things
+
 [Install Docker](https://docs.docker.com/engine/install/ubuntu)
 
-[Install Nomad](https://developer.hashicorp.com/nomad/docs/install)
+[Install Nomad](https://developer.hashicorp.com/nomad/docs/install), then follow *Linux post-installation* steps to [install CNI plugin](https://developer.hashicorp.com/nomad/docs/install#install-cni-reference-plugins).
+Do not install `consul-cni`.
 
-[Install CNI](https://developer.hashicorp.com/nomad/docs/networking/cni#create-a-cni-bridge-mode-configuration)
+## Configuring Nomad
+
+I'm sorry for the lack of syntax highlighting for HCL -_-
 
 Go to `/etc/nomad.d`, do `vim nomad.hcl`, paste this:
 ```hcl
@@ -58,9 +66,18 @@ acl {
 }
 ```
 
-Enable Nomad `systemctl enable --now nomad`
+Here we:
+- binding Nomad to all interfaces so that it can be accessed from outside
+- setting up a number of expected Nomad servers to 1
+- enabling Docker plugin
+- allowing the use of volumes in Docker containers
+- switching to the 2nd version of the containerd runtime
+- enabling the client and binding it to the localhost since we don't need it to be accessible from the outside
+- enabling ACL, meaning that we'll have to authenticate with Nomad to do anything
 
-Do a bootstrapping `nomad acl bootstrap`, you should get something like this:
+Enable and start Nomad `systemctl enable --now nomad`
+
+Perform a bootstrapping via `nomad acl bootstrap`, you should get something like this:
 ```shell
 Accessor ID  = faacbd2a-1085-8552-5e14-1bc604d95ace
 Secret ID    = 3f30403d-f5a3-00ff-b00f-bd256721b867
@@ -75,21 +92,20 @@ Policies     = n/a
 Roles        = n/a
 ```
 
-Save `Secret ID` somewhere
 
 Do `export NOMAD_TOKEN=<secret_id>`
 
-Do `nomad acl token create -name="frontend" -type="management"`
+Then do `nomad acl token create -name="frontend" -type="management"`, this will be used to authenticate with the Nomad UI
 
-Do `nomad acl token create -name="sst" -type="management"`
+And then do `nomad acl token create -name="sst" -type="management"`, this one for SST to be able to interact with Nomad remotely
 
-Save these tokens somewhere too
+Write them all down
 
 Visit `http://10.11.12.13:4646/ui`, you should see Nomad's UI. Authenticate with the `frontend` token.
 
-Get a `CF_ZONE_API_TOKEN` for Traefik to use Cloudflare's API for DNS challenge to issue TLS certificates, specify the zone `example.com`. You can do that [here](https://dash.cloudflare.com/profile/api-token), save the token.
 
-Do `nomad var put nomad/jobs/traefik cf_dns_api_token=<cf_zone_api_token>`
+## Traefik Host Configuration
+
 
 Create folders `/opt/letsencrypt` and `/opt/traefik`
 
@@ -111,10 +127,18 @@ http:
         servers:
           - url: "http://10.11.12.13:4646"
 ```
+Don't forget to replace `nomad.example.com` with your domain
 
 First we will create just a Traefik container, which will be responsible for routing traffic to our services and issuing TLS certificates. Since we won't have TLS before we have Traefik, we will use HTTP for now and rotate tokens later when we will have HTTPS configured.
 
-Init SST somehow, add `nomad` provider using `sst add nomad`, change `home` to `"local"`. You should have something like this:
+
+## First SST Interaction
+
+Actually no, execute first `nomad var put nomad/jobs/traefik cf_dns_api_token=<cf_zone_api_token>`
+
+Now init SST somehow, add `nomad` provider via `sst add nomad`, change `home` to `"local"`
+
+You should have something like this:
 ```tsx
 ...
 app(input) {
@@ -134,7 +158,8 @@ NOMAD_URL=http://10.11.12.13:4646
 NOMAD_TOKEN=<nomad-sst-secret-id>
 ```
 
-Create a folder named `.nomad` inside your project, inside it create a file named `traefik.nomad`, put this inside:
+
+Create a folder named `.nomad` inside your project, inside it create a file named `traefik.nomad` with the following content:
 ```hcl
 variable "NOMAD_URL" {
   type = string
@@ -214,6 +239,30 @@ EOF
 }
 ```
 
+Oof, that's a lot. Let's break it down:
+- variables passed to jobs are required to be defined separately, here we have only one variable `NOMAD_URL` which is needed for Traefik to know where to find Nomad so that it can use Nomad for service discovery
+- we have a job named `traefik` with a group named `traefik-group`, names are arbitrary
+- set host networking mode, meaning that Traefik will be able to bind to ports 80, 443, and 5432 on the host
+- defined a service named `traefik`, `provider = "nomad"` is super important there, without it service discovery won't work
+- defined a task named `traefik-task` which is a Docker container
+- binding ports 80, 443, and 5432 to the host
+- we are mounting `/opt/letsencrypt` and `/opt/traefik` to the container
+- passing `NOMAD_URL` to the container as an environment variable with the value from the variable
+- we are **templating** (official term) the `secrets/env` file with the Cloudflare DNS API token which we stored in Nomad variables earlier
+- i'm not sure what `identity` does, I guess it allows the task to authenticate (?) itself with Nomad
+
+Also we are passing a bunch of arguments to Traefik:
+- `--api.dashboard=false` - we don't need the dashboard
+- `--api.insecure=true` - we don't need the API to be secure because inter-service won't be leave the host (although it will be done with server's public IP -_-)
+- `--entrypoints.web.address=:${NOMAD_PORT_http}`, `--entrypoints.websecure.address=:${NOMAD_PORT_http_secure}`, `--entrypoints.database.address=:${NOMAD_PORT_database}` - defining entrypoints for Traefik using variables provided by Nomad
+- `--entrypoints.web.http.redirections.entrypoint.to=websecure`, `--entrypoints.web.http.redirections.entrypoint.scheme=https` - redirecting HTTP to HTTPS
+- `--providers.nomad=true`, `--providers.nomad.endpoint.address=${NOMAD_URL}`, `--providers.nomad.exposedByDefault=false` - enabling Nomad provider, setting the address of the Nomad server, and setting that services won't be exposed by default
+- `--accesslog=true`, `--log.level=DEBUG` - enabling access logs and setting log level to debug
+- `--certificatesresolvers.myresolver.acme.dnschallenge=true` - enabling DNS challenge for ACME
+- `--certificatesresolvers.myresolver.acme.dnschallenge.provider=cloudflare` - setting Cloudflare as the DNS challenge provider
+- `--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json` - setting the path to store ACME certificates
+- `--providers.file.filename=/traefik/dynamic-config.yml` - setting the path inside the container to the dynamic configuration file which we created earlier
+
 Add this function to `sst.config.ts`:
 ```tsx
 const getEnvVariables = () => {
@@ -230,7 +279,9 @@ const getEnvVariables = () => {
 }
 ```
 
-Update `run` function:
+This is how I do it, you can do it however you want, but you need to have access to `NOMAD_URL` and `NOMAD_TOKEN` in your code
+
+Update the `run` function:
 ```tsx
 async run() {
 	const { nomadUrl, nomadToken } = getEnvVariables()
@@ -258,12 +309,16 @@ async run() {
 }
 ```
 
-Do `env $(cat .env | xargs) sst deploy`
+Seems self-explanatory, we are creating a Nomad provider, then a Traefik job, then passing the `NOMAD_URL` variable to the job.
 
-Visit the Nomad UI, you should see a `traefik` job running. Once it's healthy, check Traefik logs, check that everything is ok, then check `/opt/letsencrypt/acme.json`, it should be populated with certs
+`skipVerify` is set to `true` because we don't have a TLS configured yet.
 
-If you can visit `https://nomad.example.com` and see the UI, then everything is working fine.
+Perform `env $(cat .env | xargs) sst deploy`, visit the Nomad UI `http://10.11.12.13:4646/ui`, you should see a `traefik` job running.
+Once it's healthy, check Traefik logs, there check that everything is ok, then check `/opt/letsencrypt/acme.json`, it should be populated with a certificate for `nomad.example.com`.
 
+If you can visit `https://nomad.example.com/ui` and see, well, the UI, then everything is working fine.
+
+## Hardening (lmao) the Nomad
 Now we need to rotate `sst` and `frontend` tokens
 
 Do `nomad acl token list`, you should see something like this:
@@ -284,13 +339,16 @@ root@sst-nomad-thing:~# nomad acl token delete 0d60c989-a5b4-874a-2940-43e7549a0
 Successfully deleted 0d60c989-a5b4-874a-2940-43e7549a060c policy!
 ```
 
-Recreate them like we did before
+Recreate them like we did before, update `NOMAD_TOKEN` in `.env` file with the new token, also change `NOMAD_URL` to `https://nomad.example.com` while you're at it.
 
-Update `NOMAD_TOKEN` in `.env` file with the new token, also change `NOMAD_URL` to `https://nomad.example.com` while you're at it
+Now we can transport secrets to the server over encrypted connection since we have HTTPS figured out.
 
-Now we can transport secrets to the server over encrypted connection since we have HTTPS figured out
+If you do a `env $(cat .env | xargs) sst refresh` now you'll get a 403 error even though we updated the token,
+that's because the token is cached, so we need to do `env $(cat .env | xargs) sst deploy`, it will error out too, do `env $(cat .env | xargs) sst deploy` again, everything should be fine.
 
-If you do a `env $(cat .env | xargs) sst refresh` now you'll get a 403 error even though we updated the token, that's because the token is cached, so we need to do `env $(cat .env | xargs) sst deploy`, it will error out too, do `env $(cat .env | xargs) sst deploy` again, everything should be fine
+## Deploying Services
+
+### Echo Service
 
 Create `echo.nomad` file in the `.nomad` folder, put this inside:
 ```hcl
@@ -362,7 +420,21 @@ EOF
 }
 ```
 
-Don't forget to replace `example.com` with your domain in service tags
+Don't forget to replace `example.com` with your domain
+
+Mostly same as the Traefik job, but with some differences:
+- here we are creating 3 instances of the service which will be load balanced (selected randomly)
+- `hashicorp/http-echo` image is used to create a simple HTTP server which will return whatever we pass to it, in this case, the database URL and the port current instance is running on
+- we are templating the `secrets/env` file with the database URL, which we will use in the `echo` service
+- `range nomadService "postgres"` is Nomad's way of service discovery, it finds a service with the name `postgres` (comes next) for us and allows us to access its `{{ .Address }}` and `{{ .Port }}`
+
+Traefik labels:
+- `traefik.enable=true` - enabling Traefik for this service
+- `traefik.http.routers.http-echo.rule=Host(`example.com`)` - setting the rule for Traefik to route traffic to this service when the request is for `example.com`
+- `traefik.http.routers.http-echo.entrypoints=websecure` - setting the entrypoint for this service to `websecure` which is the HTTPS entrypoint
+- `traefik.http.services.http-echo.loadbalancer.server.port=${NOMAD_PORT_http}` - setting the port to which Traefik should route the traffic, different for each instance and provided by Nomad
+
+### Postgres Service
 
 Create `postgres.nomad` file in the `.nomad` folder, put this inside:
 ```hcl
@@ -422,6 +494,10 @@ job "postgres" {
   }
 }
 ```
+
+Same as the `echo` service, but over TCP. Don't forget to replace `database.example.com` with your domain.
+
+### Second SST Interaction
 
 Add these to the `.env` file:
 ```env
@@ -515,4 +591,8 @@ DATABASE_URL: postgres://oofer:super-secret@10.11.12.13:24847/boofer
 CURRENT_PORT: 28721
 ```
 
-Refresh the page a couple of times, you should see different ports in the `CURRENT_PORT` field. This is load balancing in action
+Doing `openssl s_client -connect database.example.com:5432` should show us that TLS is working, so we have an encrypted connection to the database from the outside.
+
+Refresh the page a couple of times, you should see different ports in the `CURRENT_PORT` field.
+
+And I guess that's it. Now we have a working Nomad setup with Traefik and we have a way to do rolling updates, run multiple instances of services and connect them between each other.
