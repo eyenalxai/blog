@@ -1,44 +1,28 @@
-# SST + Nomad
+# SST + Nomad + Traefik on a $5 VPS
 
-We're creating a setup with Nomad, Consul, Docker, Traefik, and SST to enable easy remote service deployment and rolling updates
+Simple single-node setup with Nomad, Docker, Traefik, and SST to enable easy remote stuff deployment with rolling updates
 
-## VPS
+## VPS and DNS
+We're using a VPS running Ubuntu, and our final setup consumes approximately 1GB of RAM.
+For DNS, I chose Cloudflare because it integrates well with Traefik.
+You can use a different DNS provider, but you'll need to adjust the setup accordingly.
+Read more [here](https://doc.traefik.io/traefik/https/acme),
+[here](https://doc.traefik.io/traefik/user-guides/docker-compose/acme-dns),
+and [here](https://doc.traefik.io/traefik/https/acme/#providers).
 
-We're using a VPS running Ubuntu, and the final setup consumes approximately 1GB of RAM.
-
-Also, we're using Cloudflare for DNS because it integrates well with Traefik. You can use any other DNS provider, but you'll have to adjust the setup accordingly.
-
-Read more [here](https://doc.traefik.io/traefik/https/acme), [here](https://doc.traefik.io/traefik/user-guides/docker-compose/acme-dns), and [here](https://doc.traefik.io/traefik/https/acme/#providers)
-
-From now on pretend that `10.11.12.13` is your server's public IP and `example.com` is your domain
+From now on pretend that `10.11.12.13` is your server's public IP and `example.com` is your domain.
 
 Create A records for your domain, pointing to your server's IP address:
 
-`A example.com 10.11.12.13`
+- `A example.com 10.11.12.13`
+- `A nomad.example.com 10.11.12.13`
 
-`A nomad.example.com 10.11.12.13`
-
-Then
-
+## Installing stuff
 [Install Docker](https://docs.docker.com/engine/install/ubuntu)
 
-[Install Nomad](https://developer.hashicorp.com/nomad/docs/install), ignore post-installation steps
+[Install Nomad](https://developer.hashicorp.com/nomad/docs/install)
 
-[Install CNI](https://developer.hashicorp.com/nomad/docs/networking/cni#create-a-cni-bridge-mode-configuration) thing for bridge networking to work
-
-That page is a bit confusing, in case you don't even care what CNI is:
-```shell
-export ARCH_CNI=$( [ $(uname -m) = aarch64 ] && echo arm64 || echo amd64) CNI_PLUGIN_VERSION=v1.5.1
-```
-
-```shell
-curl -L -o cni-plugins.tgz "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGIN_VERSION}/cni-plugins-linux-${ARCH_CNI}-${CNI_PLUGIN_VERSION}".tgz && \
-  sudo mkdir -p /opt/cni/bin && \
-  sudo tar -C /opt/cni/bin -xzf cni-plugins.tgz
-```
-
-[Install Consul](https://developer.hashicorp.com/consul/install#linux)
-
+[Install CNI](https://developer.hashicorp.com/nomad/docs/networking/cni#create-a-cni-bridge-mode-configuration)
 
 Go to `/etc/nomad.d`, do `vim nomad.hcl`, paste this:
 ```hcl
@@ -101,29 +85,11 @@ Do `nomad acl token create -name="sst" -type="management"`
 
 Save these tokens somewhere too
 
-Go to `/etc/consul.d`, do `vim consul.hcl`, paste this:
-```hcl
-data_dir = "/opt/consul"
-
-node_name = "local-consul"
-server = true
-bootstrap_expect = 1
-
-connect {
-  enabled = true
-}
-
-bind_addr = "127.0.0.1"
-advertise_addr = "127.0.0.1"
-```
-
-Do `systemctl enable --now consul`, it might hang up, just `ctrl + c` it
-
 Visit `http://10.11.12.13:4646/ui`, you should see Nomad's UI. Authenticate with the `frontend` token.
 
 Get a `CF_ZONE_API_TOKEN` for Traefik to use Cloudflare's API for DNS challenge to issue TLS certificates, specify the zone `example.com`. You can do that [here](https://dash.cloudflare.com/profile/api-token), save the token.
 
-Do `consul kv put traefik/cf_dns_api_token <cf_zone_api_token>`
+Do `nomad var put nomad/jobs/traefik cf_dns_api_token=<cf_zone_api_token>`
 
 Create folders `/opt/letsencrypt` and `/opt/traefik`
 
@@ -186,6 +152,10 @@ job "traefik" {
       port "http_secure" {
         static = 443
       }
+
+      port "database" {
+        static = 5432
+      }
     }
 
     service {
@@ -198,16 +168,17 @@ job "traefik" {
 
       config {
         image = "traefik"
-        ports = ["http", "http_secure"]
+        ports = ["http", "http_secure", "database"]
         volumes = ["/opt/letsencrypt:/letsencrypt", "/opt/traefik:/traefik"]
         args = [
           "--api.dashboard=false",
           "--api.insecure=true",
           "--entrypoints.web.address=:${NOMAD_PORT_http}",
-          "--entrypoints.websecure.address=:${NOMAD_PORT_http_secure}",
-          "--entrypoints.websecure.http.tls=true",
           "--entrypoints.web.http.redirections.entrypoint.to=websecure",
           "--entrypoints.web.http.redirections.entrypoint.scheme=https",
+          "--entrypoints.websecure.address=:${NOMAD_PORT_http_secure}",
+          "--entrypoints.websecure.http.tls=true",
+          "--entrypoints.database.address=:${NOMAD_PORT_database}",
           "--providers.nomad=true",
           "--providers.nomad.endpoint.address=${NOMAD_URL}",
           "--providers.nomad.exposedByDefault=false",
@@ -225,8 +196,10 @@ job "traefik" {
       }
 
       template {
-        data = <<EOF
-CF_DNS_API_TOKEN="{{ key "traefik/cf_dns_api_token" }}"
+        data        = <<EOF
+{{- with nomadVar "nomad/jobs/traefik" -}}
+CF_DNS_API_TOKEN = {{.cf_dns_api_token}}
+{{- end -}}
 EOF
         destination = "secrets/env"
         env         = true
@@ -240,8 +213,6 @@ EOF
   }
 }
 ```
-
-Sorry for the lack of syntax highlighting :(
 
 Add this function to `sst.config.ts`:
 ```tsx
@@ -335,10 +306,6 @@ variable "POSTGRES_DATABASE" {
   type = string
 }
 
-variable "ECHO_TEXT" {
-  type = string
-}
-
 job "echo" {
   group "echo-group" {
     count = 3
@@ -383,7 +350,7 @@ job "echo" {
 
       template {
         data = <<EOF
-{{- range service "postgres" }}
+{{- range nomadService "postgres" }}
 DATABASE_URL=postgres://${var.POSTGRES_USER}:${var.POSTGRES_PASSWORD}@{{ .Address }}:{{ .Port }}/${var.POSTGRES_DATABASE}
 {{- end }}
 EOF
@@ -417,13 +384,23 @@ job "postgres" {
       mode = "bridge"
 
       port "database" {
-        to = 5432
+        to = -1
       }
     }
 
     service {
       name = "postgres"
+      provider = "nomad"
       port = "database"
+      tags = [
+        "database",
+        "traefik.enable=true",
+        "traefik.tcp.routers.db.rule=HostSNI(`database.example.com`)",
+        "traefik.tcp.routers.db.tls=true",
+        "traefik.tcp.routers.db.entrypoints=database",
+        "traefik.tcp.routers.db.tls.certresolver=myresolver",
+        "traefik.tcp.services.db.loadbalancer.server.port=${NOMAD_PORT_database}"
+      ]
     }
 
     task "postgres-task" {
@@ -439,6 +416,7 @@ job "postgres" {
         POSTGRES_PASSWORD = var.POSTGRES_PASSWORD
         POSTGRES_USER = var.POSTGRES_USER
         POSTGRES_DB = var.POSTGRES_DATABASE
+        PGPORT = "${NOMAD_PORT_database}"
       }
     }
   }
@@ -499,7 +477,6 @@ const echo = new nomad.Job(
 		jobspec: readFileSync(".nomad/echo.nomad", "utf-8"),
 		hcl2: {
 			vars: {
-				ECHO_TEXT: "Hello",
 				POSTGRES_PASSWORD: postgresPassword,
 				POSTGRES_USER: postgresUser,
 				POSTGRES_DATABASE: postgresDatabase
