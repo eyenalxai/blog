@@ -47,7 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 							"prose",
 							"prose-slate",
 							"dark:prose-invert",
-							["prose-pre:bg-background", "prose-pre:text-primary"]
+							["prose-pre:bg-background", "prose-pre:text-primary", "prose-pre:p-0"]
 						)}
 					>
 						{children}
