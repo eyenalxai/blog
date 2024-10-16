@@ -538,15 +538,4 @@ DATABASE_URL: postgres://oofer:super-secret@10.11.12.13:24847/boofer
 CURRENT_PORT: 28721
 ```
 
-Notice that database connection is performed over a public IP, but the port is not open on the host, so it's not accessible from outside (somehow idk)
-
-Do `ss -tuln`, observe that the only things exposed are:
-- 22 (SSH)
-- 80 (HTTP)
-- 443 (HTTPS)
-- 4646 (Nomad)
-- 4647 (also Nomad)
-- 4648 (and Nomad too)
-
-
 Refresh the page a couple of times, you should see different ports in the `CURRENT_PORT` field. This is load balancing in action
