@@ -37,7 +37,21 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 		<html lang="en" suppressHydrationWarning>
 			<body className={cn("font-sans", "antialiased", GeistSans.variable, GeistMono.variable)}>
 				<Providers attribute="class" defaultTheme="system" enableSystem>
-					{children}
+					<article
+						className={cn(
+							"container",
+							"mx-auto",
+							"mt-12",
+							"p-4",
+							"max-w-screen-lg",
+							"prose",
+							"prose-slate",
+							"dark:prose-invert",
+							["prose-pre:bg-background", "prose-pre:text-primary"]
+						)}
+					>
+						{children}
+					</article>
 				</Providers>
 			</body>
 		</html>

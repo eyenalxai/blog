@@ -5,7 +5,7 @@ module.exports = {
 		hoverOnlyWhenSupported: true
 	},
 	content: ["./src/**/*.{ts,tsx}"],
-	plugins: [require("tailwindcss-animate")],
+	plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 	theme: {
 		extend: {
 			fontFamily: {
