@@ -22,7 +22,7 @@ Then
 
 [Install Docker](https://docs.docker.com/engine/install/ubuntu)
 
-[Install Nomad](https://developer.hashicorp.com/nomad/docs/install)
+[Install Nomad](https://developer.hashicorp.com/nomad/docs/install), ignore post-installation steps
 
 [Install CNI](https://developer.hashicorp.com/nomad/docs/networking/cni#create-a-cni-bridge-mode-configuration) thing for bridge networking to work
 
@@ -101,8 +101,10 @@ Do `nomad acl token create -name="sst" -type="management"`
 
 Save these tokens somewhere too
 
-Go to `/etc/consul.d`, do `consul.hcl`, paste this:
+Go to `/etc/consul.d`, do `vim consul.hcl`, paste this:
 ```hcl
+data_dir = "/opt/consul"
+
 node_name = "local-consul"
 server = true
 bootstrap_expect = 1
@@ -295,7 +297,6 @@ Now we need to rotate `sst` and `frontend` tokens
 
 Do `nomad acl token list`, you should see something like this:
 ```shell
-root@sst-nomad-thing:/opt/letsencrypt# nomad acl token list
 Name             Type        Global  Accessor ID                           Expired
 Bootstrap Token  management  true    f4ab3e26-ce1d-11e6-3d9a-238db337c10a  false
 frontend         management  false   0d60c989-a5b4-874a-2940-43e7549a060c  false
@@ -306,9 +307,9 @@ If you get access denied do `export NOMAD_TOKEN=<bootstrap_token>`
 
 Delete tokens:
 ```shell
-root@sst-nomad-thing:/opt/letsencrypt# nomad acl policy delete 0d60c989-a5b4-874a-2940-43e7549a060c
+root@sst-nomad-thing:~# nomad acl token delete 0d60c989-a5b4-874a-2940-43e7549a060c
 Successfully deleted 0d60c989-a5b4-874a-2940-43e7549a060c policy!
-root@sst-nomad-thing:/opt/letsencrypt# nomad acl policy delete 0d60c989-a5b4-874a-2940-43e7549a060c
+root@sst-nomad-thing:~# nomad acl token delete 0d60c989-a5b4-874a-2940-43e7549a060c
 Successfully deleted 0d60c989-a5b4-874a-2940-43e7549a060c policy!
 ```
 
@@ -318,7 +319,7 @@ Update `NOMAD_TOKEN` in `.env` file with the new token, also change `NOMAD_URL` 
 
 Now we can transport secrets to the server over encrypted connection since we have HTTPS figured out
 
-Do `env $(cat .env | xargs) sst deploy`, it will error out, do `env $(cat .env | xargs) sst deploy` again, everything should be fine
+If you do a `env $(cat .env | xargs) sst refresh` now you'll get a 403 error even though we updated the token, that's because the token is cached, so we need to do `env $(cat .env | xargs) sst deploy`, it will error out too, do `env $(cat .env | xargs) sst deploy` again, everything should be fine
 
 Create `echo.nomad` file in the `.nomad` folder, put this inside:
 ```hcl
@@ -477,6 +478,17 @@ const getEnvVariables = () => {
 		postgresDatabase
 	}
 }
+```
+
+And its call
+```ts
+const {
+	nomadUrl,
+	nomadToken,
+	postgresPassword,
+	postgresUser,
+	postgresDatabase
+} = getEnvVariables()
 ```
 
 Add new jobs to the `run` function:
