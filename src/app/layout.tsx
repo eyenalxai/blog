@@ -1,4 +1,6 @@
 import "./globals.css"
+import "./code-style.css"
+import "katex/dist/katex.min.css"
 import { Providers } from "@/components/providers"
 import { cn } from "@/lib/utils"
 import { GeistMono } from "geist/font/mono"
