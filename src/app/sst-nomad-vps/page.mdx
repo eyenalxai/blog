@@ -434,7 +434,7 @@ Mostly same as the Traefik job, but with some differences:
 
 Traefik labels:
 - `traefik.enable=true` - enabling Traefik for this service
-- `traefik.http.routers.http-echo.rule=Host(`${var.DOMAIN}`)` - setting the rule for Traefik to route traffic to this service when the request is made to the domain specified in the variable
+- `traefik.http.routers.http-echo.rule=Host(``${var.DOMAIN}``)` - setting the rule for Traefik to route traffic to this service when the request is made to the domain specified in the variable
 - `traefik.http.routers.http-echo.entrypoints=websecure` - setting the entrypoint for this service to `websecure` which is the HTTPS entrypoint
 - `traefik.http.services.http-echo.loadbalancer.server.port=${NOMAD_PORT_http}` - setting the port to which Traefik should route the traffic, different for each instance and provided by Nomad
 
