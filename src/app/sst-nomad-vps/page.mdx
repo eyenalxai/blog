@@ -257,7 +257,7 @@ Oof, that's a lot. Let's break it down:
 
 Also we are passing a bunch of arguments to Traefik:
 - `--api.dashboard=false` - we don't need the dashboard
-- `--api.insecure=true` - we don't need the API to be secure because inter-service won't be leave the host (although it will be done with server's public IP -_-)
+- `--api.insecure=true` - we don't need the API to be secure because inter-service communication won't leave the host (although it will be done with server's public IP -_-)
 - `--entrypoints.web.address=:${NOMAD_PORT_http}`, `--entrypoints.websecure.address=:${NOMAD_PORT_http_secure}`, `--entrypoints.database.address=:${NOMAD_PORT_database}` - defining entrypoints for Traefik using variables provided by Nomad
 - `--entrypoints.web.http.redirections.entrypoint.to=websecure`, `--entrypoints.web.http.redirections.entrypoint.scheme=https` - redirecting HTTP to HTTPS
 - `--providers.nomad=true`, `--providers.nomad.endpoint.address=${NOMAD_URL}`, `--providers.nomad.exposedByDefault=false` - enabling Nomad provider, setting the address of the Nomad server, and setting that services won't be exposed by default
