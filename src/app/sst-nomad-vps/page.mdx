@@ -366,6 +366,10 @@ variable "POSTGRES_DATABASE" {
   type = string
 }
 
+variable "DOMAIN" {
+  type = string
+}
+
 job "echo" {
   group "echo-group" {
     count = 3
@@ -385,7 +389,7 @@ job "echo" {
       tags = [
         "http-echo",
         "traefik.enable=true",
-        "traefik.http.routers.http-echo.rule=Host(`example.com`)",
+        "traefik.http.routers.http-echo.rule=Host(`${var.DOMAIN}`)",
         "traefik.http.routers.http-echo.entrypoints=websecure",
         "traefik.http.routers.http-echo.tls.certresolver=myresolver",
         "traefik.http.services.http-echo.loadbalancer.server.port=${NOMAD_PORT_http}"
@@ -422,8 +426,6 @@ EOF
 }
 ```
 
-Don't forget to replace `example.com` with your domain
-
 Mostly same as the Traefik job, but with some differences:
 - here we are creating 3 instances of the service which will be load balanced (selected randomly)
 - `hashicorp/http-echo` image is used to create a simple HTTP server which will return whatever we pass to it, in this case, the database URL and the port current instance is running on
@@ -432,7 +434,7 @@ Mostly same as the Traefik job, but with some differences:
 
 Traefik labels:
 - `traefik.enable=true` - enabling Traefik for this service
-- `traefik.http.routers.http-echo.rule=Host(`example.com`)` - setting the rule for Traefik to route traffic to this service when the request is for `example.com`
+- `traefik.http.routers.http-echo.rule=Host(`${var.DOMAIN}`)` - setting the rule for Traefik to route traffic to this service when the request is made to the domain specified in the variable
 - `traefik.http.routers.http-echo.entrypoints=websecure` - setting the entrypoint for this service to `websecure` which is the HTTPS entrypoint
 - `traefik.http.services.http-echo.loadbalancer.server.port=${NOMAD_PORT_http}` - setting the port to which Traefik should route the traffic, different for each instance and provided by Nomad
 
@@ -449,6 +451,10 @@ variable "POSTGRES_USER" {
 }
 
 variable "POSTGRES_DATABASE" {
+  type = string
+}
+
+variable "DOMAIN" {
   type = string
 }
 
@@ -469,7 +475,7 @@ job "postgres" {
       tags = [
         "database",
         "traefik.enable=true",
-        "traefik.tcp.routers.db.rule=HostSNI(`database.example.com`)",
+        "traefik.tcp.routers.db.rule=HostSNI(`database.${var.DOMAIN}`)",
         "traefik.tcp.routers.db.tls=true",
         "traefik.tcp.routers.db.entrypoints=database",
         "traefik.tcp.routers.db.tls.certresolver=myresolver",
@@ -495,9 +501,10 @@ job "postgres" {
     }
   }
 }
+
 ```
 
-Same as the `echo` service, but over TCP. Don't forget to replace `database.example.com` with your domain.
+Same as the `echo` service, but over TCP.
 
 ### Second SST Interaction
 
@@ -506,7 +513,10 @@ Add these to the `.env` file:
 POSTGRES_PASSWORD=super-secret
 POSTGRES_USER=oofer
 POSTGRES_DB=boofer
+DOMAIN=domain.com
 ```
+
+Don't forget to replace `domain.com` with your domain
 
 Update `getEnvVariables` function
 ```ts
@@ -516,6 +526,9 @@ const getEnvVariables = () => {
 
 	const nomadToken = process.env.NOMAD_TOKEN
 	if (!nomadToken) throw new Error("NOMAD_TOKEN is not set")
+
+	const domain = process.env.DOMAIN
+	if (!domain) throw new Error("DOMAIN is not set")
 
 	const postgresPassword = process.env.POSTGRES_PASSWORD
 	if (!postgresPassword) throw new Error("POSTGRES_PASSWORD is not set")
@@ -529,6 +542,7 @@ const getEnvVariables = () => {
 	return {
 		nomadUrl,
 		nomadToken,
+		domain,
 		postgresPassword,
 		postgresUser,
 		postgresDatabase
@@ -538,13 +552,14 @@ const getEnvVariables = () => {
 
 And its call
 ```ts
-const {
-	nomadUrl,
-	nomadToken,
-	postgresPassword,
-	postgresUser,
-	postgresDatabase
-} = getEnvVariables()
+	const {
+		nomadUrl,
+		nomadToken,
+		domain,
+		postgresPassword,
+		postgresUser,
+		postgresDatabase
+	} = getEnvVariables()
 ```
 
 Add new jobs to the `run` function:
@@ -557,7 +572,8 @@ const echo = new nomad.Job(
 			vars: {
 				POSTGRES_PASSWORD: postgresPassword,
 				POSTGRES_USER: postgresUser,
-				POSTGRES_DATABASE: postgresDatabase
+				POSTGRES_DATABASE: postgresDatabase,
+				DOMAIN: domain
 			}
 		}
 	},
@@ -574,7 +590,8 @@ const postgres = new nomad.Job(
 			vars: {
 				POSTGRES_PASSWORD: postgresPassword,
 				POSTGRES_USER: postgresUser,
-				POSTGRES_DATABASE: postgresDatabase
+				POSTGRES_DATABASE: postgresDatabase,
+				DOMAIN: domain
 			}
 		}
 	},
