@@ -2,6 +2,8 @@
 
 # SST + Nomad
 
+Repo with the code is [there](https://github.com/eyenalxai/sst-nomad-thing)
+
 ## $5 VPS
 
 Get yourself a VPS with at least 1GB of RAM, preferably a bit more. I know it is possible to provision one with SST from a myriad of providers,
@@ -33,7 +35,7 @@ Do not install the `consul-cni`.
 
 I'm sorry for the lack of syntax highlighting for HCL -_-
 
-Go to `/etc/nomad.d`, do `vim nomad.hcl`, paste this:
+SSH into your server, go to `/etc/nomad.d`, do `vim nomad.hcl`, paste this:
 ```hcl
 data_dir  = "/opt/nomad/data"
 bind_addr = "0.0.0.0"
@@ -615,3 +617,4 @@ Running `openssl s_client -connect database.example.com:5432` should show us tha
 Refresh the page a couple of times, you should see different ports in the `CURRENT_PORT` field.
 
 And I guess that's it. Now we have a working Nomad setup with Traefik, and we have a way to do rolling updates, run multiple instances of services, and connect them to each other.
+
