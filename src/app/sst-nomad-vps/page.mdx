@@ -322,6 +322,8 @@ Once it's healthy, check Traefik logs, there check that everything is ok, then c
 
 If you can visit `https://nomad.example.com/ui` and see, well, the UI, then everything is working fine.
 
+Change `skipVerify` to `false` in the `nomadProvider`.
+
 ## Hardening (lmao) the Nomad
 Now we need to rotate `sst` and `frontend` tokens
 
