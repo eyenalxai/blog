@@ -356,7 +356,7 @@ That's because the token is cached, so we need to do `env $(cat .env | xargs) ss
 
 ### Echo Service
 
-Create `echo.nomad` file in the `.nomad` folder, put this inside:
+Create `echo.nomad` file in the `.nomad` folder in the project root, put this inside:
 ```hcl
 variable "POSTGRES_USER" {
   type = string
