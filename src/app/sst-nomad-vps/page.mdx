@@ -5,30 +5,29 @@
 ## $5 VPS
 
 Get yourself a VPS with at least 1GB of RAM, preferably a bit more. I know it is possible to provision one with SST from a myriad of providers,
-but I wanted a more general setup that could be used with any VPS provider or maybe even a bare metal server.
+but I wanted a more general setup that could be used with any VPS provider or even a bare metal server.
 
 ## DNS
-For DNS I'll be using Cloudflare because it integrates neatly with Traefik, which will be our reverse proxy, load balancer, and TLS certificate provisioner.
+For DNS, I'll be using Cloudflare because it integrates neatly with Traefik, which will be our reverse proxy, load balancer, and TLS certificate provisioner.
 You can use any other DNS provider, but you'll have to adjust the Traefik configuration accordingly.
 You can read more [here](https://doc.traefik.io/traefik/https/acme),
 [here](https://doc.traefik.io/traefik/user-guides/docker-compose/acme-dns),
 and [here](https://doc.traefik.io/traefik/https/acme/#providers).
 
-Pretend that `10.11.12.13` is your server's public IP and `example.com` is your domain, then create A records for your domain, pointing to your server's public IP address:
+Pretend that `10.11.12.13` is your server's public IP and example.com is your domain. Then create A records for your domain, pointing to your server's IP address:
 
 - `A example.com 10.11.12.13`
 - `A nomad.example.com 10.11.12.13`
 - `A database.example.com 10.11.12.13`
 
-Get a `CF_ZONE_API_TOKEN` for Traefik to use Cloudflare's API for DNS challenge to issue TLS certificates, specify the zone `example.com`. You can do that [here](https://dash.cloudflare.com/profile/api-token). Save the token.
-
+Get a `CF_ZONE_API_TOKEN` for Traefik to use Cloudflare's API for DNS challenges to issue TLS certificates, specifying the zone `example.com`. You can do that [here](https://dash.cloudflare.com/profile/api-token). Save the token.
 
 ## Installing things
 
 [Install Docker](https://docs.docker.com/engine/install/ubuntu)
 
 [Install Nomad](https://developer.hashicorp.com/nomad/docs/install), then follow *Linux post-installation* steps to [install CNI plugin](https://developer.hashicorp.com/nomad/docs/install#install-cni-reference-plugins).
-Do not install `consul-cni`.
+Do not install the `consul-cni`.
 
 ## Configuring Nomad
 
@@ -68,7 +67,7 @@ acl {
 }
 ```
 
-Here we:
+Here we are:
 - binding Nomad to all interfaces so that it can be accessed from outside
 - setting up a number of expected Nomad servers to 1
 - enabling Docker plugin
@@ -79,7 +78,7 @@ Here we:
 
 Enable and start Nomad `systemctl enable --now nomad`
 
-Perform a bootstrapping via `nomad acl bootstrap`, you should get something like this:
+Perform a bootstrapping via `nomad acl bootstrap`. You should get something like this:
 ```shell
 Accessor ID  = faacbd2a-1085-8552-5e14-1bc604d95ace
 Secret ID    = 3f30403d-f5a3-00ff-b00f-bd256721b867
@@ -129,14 +128,15 @@ http:
         servers:
           - url: "http://10.11.12.13:4646"
 ```
-Don't forget to replace `nomad.example.com` with your domain
+Don't forget to replace `nomad.example.com` with your domain.
 
-First we will create just a Traefik container, which will be responsible for routing traffic to our services and issuing TLS certificates. Since we won't have TLS before we have Traefik, we will use HTTP for now and rotate tokens later when we will have HTTPS configured.
+First we will create just a Traefik container, which will be responsible for routing traffic to our services and issuing TLS certificates.
+Since we won't have TLS before we have Traefik, we will use HTTP for now and rotate tokens later when we will have HTTPS configured.
 
 
 ## First SST Interaction
 
-Actually no, execute first `nomad var put nomad/jobs/traefik cf_dns_api_token=<cf_zone_api_token>`
+Actually no, first execute `nomad var put nomad/jobs/traefik cf_dns_api_token=<cf_zone_api_token>`
 
 Now init SST somehow, add `nomad` provider via `sst add nomad`, change `home` to `"local"`
 
@@ -341,12 +341,12 @@ root@sst-nomad-thing:~# nomad acl token delete 0d60c989-a5b4-874a-2940-43e7549a0
 Successfully deleted 0d60c989-a5b4-874a-2940-43e7549a060c policy!
 ```
 
-Recreate them like we did before, update `NOMAD_TOKEN` in `.env` file with the new token, also change `NOMAD_URL` to `https://nomad.example.com` while you're at it.
+Recreate them as we did before, update `NOMAD_TOKEN` in the `.env` file with the new token, also change `NOMAD_URL` to `https://nomad.example.com` while you're at it.
 
 Now we can transport secrets to the server over encrypted connection since we have HTTPS figured out.
 
-If you do a `env $(cat .env | xargs) sst refresh` now you'll get a 403 error even though we updated the token,
-that's because the token is cached, so we need to do `env $(cat .env | xargs) sst deploy`, it will error out too, do `env $(cat .env | xargs) sst deploy` again, everything should be fine.
+If you do `env $(cat .env | xargs) sst refresh` now, you'll get a 403 error even though we updated the token.
+That's because the token is cached, so we need to do `env $(cat .env | xargs) sst deploy`. It will error out too, but do `env $(cat .env | xargs) sst deploy` again, and everything should be fine.
 
 ## Deploying Services
 
@@ -516,7 +516,7 @@ POSTGRES_DB=boofer
 DOMAIN=domain.com
 ```
 
-Don't forget to replace `domain.com` with your domain
+Don't forget to replace `domain.com` with your domain.
 
 Update `getEnvVariables` function
 ```ts
@@ -610,8 +610,8 @@ DATABASE_URL: postgres://oofer:super-secret@10.11.12.13:24847/boofer
 CURRENT_PORT: 28721
 ```
 
-Doing `openssl s_client -connect database.example.com:5432` should show us that TLS is working, so we have an encrypted connection to the database from the outside.
+Running `openssl s_client -connect database.example.com:5432` should show us that TLS is working, indicating that we have an encrypted connection to the database from the outside.
 
 Refresh the page a couple of times, you should see different ports in the `CURRENT_PORT` field.
 
-And I guess that's it. Now we have a working Nomad setup with Traefik and we have a way to do rolling updates, run multiple instances of services and connect them between each other.
+And I guess that's it. Now we have a working Nomad setup with Traefik, and we have a way to do rolling updates, run multiple instances of services, and connect them to each other.
