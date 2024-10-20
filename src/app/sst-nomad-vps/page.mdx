@@ -397,6 +397,7 @@ job "echo" {
 
       port "http" {
         to = -1
+				host_network = "private"
       }
     }
 
@@ -483,6 +484,7 @@ job "postgres" {
 
       port "database" {
         to = -1
+				host_network = "private"
       }
     }
 
